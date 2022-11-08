@@ -136,6 +136,29 @@ void Ekf::controlGpsFusion()
 						_information_events.flags.reset_pos_to_gps = true;
 						resetVelocityTo(gps_sample.vel, vel_obs_var);
 						resetHorizontalPositionTo(gps_sample.pos, pos_obs_var);
+
+					} else if (_imu_accel_clipping_NE) {
+						// accel clipping in horizontal axis, fully reset velocity and position to GPS if available
+
+						// reset velocity (if current sample speed accuracy is good)
+						if ((gps_sample.sacc < _params.req_sacc) && isRecent(_aid_src_gnss_vel.time_last_fuse, (uint64_t)1e6)) {
+							_information_events.flags.reset_vel_to_gps = true;
+							resetVelocityTo(gps_sample.vel, vel_obs_var);
+							_aid_src_gnss_vel.time_last_fuse = _imu_sample_delayed.time_us;
+						}
+
+						// reset position (if current sample horizontal accuracy is good)
+						if ((gps_sample.hacc < _params.req_hacc) && isRecent(_aid_src_gnss_pos.time_last_fuse, (uint64_t)1e6)) {
+							_information_events.flags.reset_pos_to_gps = true;
+							resetHorizontalPositionTo(gps_sample.pos, pos_obs_var);
+							_aid_src_gnss_pos.time_last_fuse = _imu_sample_delayed.time_us;
+						}
+
+					} else if (isHeightResetRequired() || _imu_accel_clipping_D) {
+						// reset vertical velocity if height failing or accel clipping in vertical axis
+						if ((gps_sample.sacc < _params.req_sacc) && isRecent(_aid_src_gnss_vel.time_last_fuse, (uint64_t)1e6)) {
+							resetVerticalVelocityTo(gps_sample.vel(2), vel_obs_var(2));
+						}
 					}
 
 				} else {
