@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- *   Copyright (c) 2020, 2021 PX4 Development Team. All rights reserved.
+ *   Copyright (c) 2020-2022 PX4 Development Team. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -246,6 +246,15 @@ bool param_modify_on_import(bson_node_t node)
 			}
 
 			PX4_INFO("param migrating EKF2_HGT_MODE (removed) -> EKF2_HGT_REF: value=%" PRId32, node->i32);
+			return true;
+		}
+	}
+
+	// 2022-11-09: translate LAUN_ALL_ON->LAUN_DETCN_ON
+	{
+		if (strcmp("LAUN_ALL_ON", node->name) == 0) {
+			strcpy(node->name, "LAUN_DETCN_ON");
+			PX4_INFO("copying %s -> %s", "LAUN_ALL_ON", "LAUN_DETCN_ON");
 			return true;
 		}
 	}
